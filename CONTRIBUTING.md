@@ -11,6 +11,8 @@ Write public contributions in English and keep the Chinese README synchronized.
 3. Install Scoop, BuildHelpers >= 2.0.1, and Pester >= 5.2.0. Set `SCOOP_HOME` to your Scoop checkout and `CI=false`, then run:
 
    ```pwsh
+   $env:SCOOP_HOME = Resolve-Path (scoop prefix scoop)
+   $env:CI = 'false'
    pwsh -NoProfile -File bin/test.ps1
    pwsh -NoProfile -File .github/scripts/test-excavator.ps1
    pwsh -NoProfile -File .github/scripts/test-excavator-publish.ps1
