@@ -2,11 +2,13 @@ name: Tests
 
 on:
   push:
-    branches:
-      - 'main'
-      - 'develop'
   pull_request:
+    types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
   test_powershell:
@@ -14,12 +16,12 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout Bucket
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
         with:
           fetch-depth: 2
           path: my_bucket
       - name: Checkout Scoop
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
         with:
           repository: ScoopInstaller/Scoop
           path: scoop_core
@@ -32,18 +34,19 @@ jobs:
         shell: powershell
         run: |
           $env:SCOOP_HOME="$(Convert-Path '.\scoop_core')"
+          $env:CI='false'
           .\my_bucket\bin\test.ps1
   test_pwsh:
     name: PowerShell
     runs-on: windows-latest
     steps:
       - name: Checkout Bucket
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
         with:
           fetch-depth: 2
           path: my_bucket
       - name: Checkout Scoop
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
         with:
           repository: ScoopInstaller/Scoop
           path: scoop_core
@@ -56,4 +59,61 @@ jobs:
         shell: pwsh
         run: |
           $env:SCOOP_HOME="$(Convert-Path '.\scoop_core')"
+          $env:CI='false'
           .\my_bucket\bin\test.ps1
+  test:
+    if: always()
+    needs: [test_powershell, test_pwsh]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require both PowerShell suites
+        env:
+          WINDOWS_POWERSHELL: ${{ needs.test_powershell.result }}
+          POWERSHELL: ${{ needs.test_pwsh.result }}
+        run: test "$WINDOWS_POWERSHELL" = success && test "$POWERSHELL" = success
+      - uses: actions/checkout@v4
+      - name: Test updater publication gates
+        shell: pwsh
+        run: |
+          ./.github/scripts/test-excavator.ps1
+          ./.github/scripts/test-excavator-publish.ps1
+  policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: commit-check/commit-check-action@v2
+        with:
+          branch: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'dependabot/') }}
+          pr-title: ${{ github.event_name == 'pull_request' }}
+      - name: Check exact branch name
+        if: github.event_name == 'pull_request' || github.ref_type == 'branch'
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [[ "$BRANCH" != dependabot/* && ( "$EVENT" == pull_request || "$BRANCH" != main ) ]]; then
+            [[ "$BRANCH" =~ ^(feat|fix|perf|refactor|docs|style|test|build|ci|chore|revert)/[a-z0-9]+(-[a-z0-9]+)*$ ]]
+          fi
+      - name: Check every pushed commit
+        if: github.event_name != 'pull_request'
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          python3 - <<'PY'
+          import os, re, subprocess, tomllib
+          def git(*args):
+              return subprocess.check_output(['git', *args], text=True).strip()
+          before = os.environ['BEFORE']
+          known = before.strip('0') and subprocess.run(['git', 'cat-file', '-e', before + '^{commit}'], capture_output=True).returncode == 0
+          if not known:
+              main = subprocess.run(['git', 'rev-parse', '--verify', 'origin/main'], capture_output=True, text=True)
+              before = git('merge-base', 'HEAD', 'origin/main') if main.returncode == 0 else ''
+          rev = f'{before}..HEAD' if before else 'HEAD'
+          pattern = tomllib.load(open('cchk.toml', 'rb'))['commit']['message_pattern']
+          for sha in git('rev-list', rev).splitlines():
+              message = git('show', '-s', '--format=%B', sha)
+              if not re.fullmatch(pattern, message):
+                  raise SystemExit(f'{sha}: invalid scoped Conventional Commit: {message.splitlines()[0]}')
+          PY

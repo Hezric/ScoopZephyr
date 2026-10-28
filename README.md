@@ -1,42 +1,37 @@
 <div align="center">
-    <h1 align="center">🎐Zephyr</h1>
-    <p align="center">
-        <a href="https://github.com/Hezric/scoop-zephyr/actions/workflows/ci.yml"><img src="https://github.com/Hezric/scoop-zephyr/actions/workflows/ci.yml/badge.svg" alt="GitHub Actions CI Status"></a>
-        <a href="https://github.com/Hezric/scoop-zephyr/actions/workflows/excavator.yml"><img src="https://github.com/Hezric/scoop-zephyr/actions/workflows/excavator.yml/badge.svg" alt="License"></a>
-        <a href="https://www.microsoft.com/en-us/windows"><img src="https://img.shields.io/badge/Target-Windows%2011-0067B8.svg" alt="Powered by Saber" /></a>
+    <h1>🎐 Zephyr</h1>
+    <p>Lightweight, refined tools for seamless workflows.</p>
+    <p>
+        <a href="https://github.com/Hezric/scoop-zephyr/actions/workflows/ci.yml"><img src="https://github.com/Hezric/scoop-zephyr/actions/workflows/ci.yml/badge.svg" alt="Bucket tests and policy"></a>
+        <a href="https://github.com/Hezric/scoop-zephyr/actions/workflows/excavator.yml"><img src="https://github.com/Hezric/scoop-zephyr/actions/workflows/excavator.yml/badge.svg" alt="Automatic manifest updates"></a>
     </p>
-    <p align="center">English | <a href="README_zh-Hans.md">简体中文</a></p>
-    <p align="center">
-        A <a href="https://github.com/lukesampson/scoop/wiki/Buckets"><code>bucket</code></a> for <a href="https://github.com/lukesampson/scoop">Scoop</a>, providing lightweight, refined tools for seamless workflows.
-    </p>
+    <p>English | <a href="README_zh-Hans.md">简体中文</a></p>
 </div>
 
-## Apps
+A small [Scoop](https://scoop.sh) bucket for Windows, gathering useful tools that leave room for the work you care about.
 
-| Manifest | Description | Official |
-| -------- | ----------- | -------- |
-| `AutoHotkey` | Install `Ahk2Exe` by default and set `AHK_HOME` to the root directory of `AutoHotkey`. | [GitHub](https://github.com/AutoHotkey/AutoHotkey) |
-| `codex-acp` | ACP adapter for `Codex`, packaged for `ACP-compatible` clients such as `Zed` on Windows. | [GitHub](https://github.com/zed-industries/codex-acp) |
-| `cua-driver` | Cross-platform desktop automation driver for `Cua`. | [GitHub](https://github.com/trycua/cua) |
+## Install
 
-
-## How to install the apps from this bucket?
-
-Run below command in PowerShell to add the bucket:
+Add the bucket in PowerShell, then choose an app:
 
 ```pwsh
 scoop bucket add zephyr https://github.com/Hezric/scoop-zephyr
-```
-
-Install apps from this bucket with below command:
-
-```pwsh
 scoop install zephyr/<app_name>
 ```
 
-## How do I contribute new apps?
+## Apps
 
-To make a new manifest contribution, please read the [Contributing
-Guide](https://github.com/ScoopInstaller/.github/blob/main/.github/CONTRIBUTING.md)
-and [App Manifests](https://github.com/ScoopInstaller/Scoop/wiki/App-Manifests)
-wiki page.
+| Manifest | Description | Upstream |
+| --- | --- | --- |
+| `autohotkey` | Includes `Ahk2Exe` and sets `AHK_HOME` to the AutoHotkey root. | [AutoHotkey](https://github.com/AutoHotkey/AutoHotkey) |
+| `codex-acp` | Codex ACP adapter for compatible Windows clients such as Zed. | [codex-acp](https://github.com/zed-industries/codex-acp) |
+| `cua-driver` | Cross-platform desktop automation driver for Cua. | [Cua](https://github.com/trycua/cua) |
+| `lineup` | A JSON-first Windows startup manager. | [Lineup](https://github.com/Hezric/Lineup) |
+
+## Contribute
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for manifest tests and contributions, and [AGENTS.md](AGENTS.md) for the complete delivery rules. GitHub Issues is the tracker; specifications use parent issues and tickets use native sub-issues, with `ready-for-agent`, `in-progress`, `blocked`, and `done` labels.
+
+Use signed commits, lowercase scoped Conventional Commits and PR titles, and `<type>/<short-desc>` branches. Required `test` and `policy` checks guard a signed, linear main; changes normally land through squash PRs. [Automatic updates](docs/features/manifest-updates.md) stage verified bot commits, run those same checks, and promote the exact green SHA without a bypass. Dependabot groups GitHub Actions updates weekly and auto squash-merges them after checks.
+
+The bucket ships manifests rather than release artifacts. Repository code is [MIT licensed](LICENSE); each app retains its upstream license.
