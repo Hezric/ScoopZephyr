@@ -177,7 +177,7 @@ if ($tipSha -ne $baseSha) {
     $target = Invoke-GitHubApi -Method Get -Uri "$repoUri/git/ref/heads/$targetBranch"
     if ($target.object.sha -ne $baseSha) { throw "Main changed during excavation; staged branch $branch retained." }
     $currentPr = Invoke-GitHubApi -Method Get -Uri "$repoUri/pulls/$($pr.number)"
-    if ($currentPr.head.sha -ne $tipSha -or $currentPr.title -ne $title) { throw 'Update PR changed after policy validation.' }
+    if ($currentPr.head.sha -ne $tipSha -or $currentPr.title -ne $title -or $currentPr.base.ref -ne $targetBranch) { throw 'Update PR changed after policy validation.' }
     $result = Invoke-GitHubApi -Method Put -Uri "$repoUri/pulls/$($pr.number)/merge" -Body (@{ sha = $tipSha; merge_method = 'squash' } | ConvertTo-Json -Compress)
     if ($result.merged -ne $true) { throw 'Update PR was not merged.' }
     $commit = Invoke-GitHubApi -Method Get -Uri "$repoUri/commits/$($result.sha)"

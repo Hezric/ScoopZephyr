@@ -55,7 +55,7 @@ function Invoke-RestMethod {
             @{ number = 7; head = @{ sha = 'bot-sha' }; title = $payload.title }
         }
         'Get /pulls/7' {
-            @{ number = 7; head = @{ sha = 'bot-sha' }; title = 'chore(bucket): update app manifests' }
+            @{ number = 7; head = @{ sha = 'bot-sha' }; title = 'chore(bucket): update app manifests'; base = @{ ref = $(if ($scenario -eq 'retargeted-pr') { 'develop' } else { 'main' }) } }
         }
         'Put /pulls/7/merge' {
             if ($scenario -eq 'merge-failed') { throw 'PR merge rejected.' }
@@ -83,7 +83,7 @@ function Invoke-RestMethod {
 }
 
 try {
-    foreach ($scenario in @('success', 'failed-ci', 'concurrent-main', 'pr-rejected', 'merge-failed', 'unsigned-merge')) {
+    foreach ($scenario in @('success', 'failed-ci', 'concurrent-main', 'pr-rejected', 'merge-failed', 'unsigned-merge', 'retargeted-pr')) {
         $requests = [Collections.Generic.List[string]]::new()
         $failure = $null
         try { & "$PSScriptRoot/excavator.ps1" } catch { $failure = $_ }
@@ -100,6 +100,7 @@ try {
                 'concurrent-main' { '*Main changed*' }
                 'pr-rejected' { '*PR creation rejected*' }
                 'merge-failed' { '*PR merge rejected*' }
+                'retargeted-pr' { '*Update PR changed*' }
             }
             if ($failure.Exception.Message -notlike $expected) { throw $failure }
         }
