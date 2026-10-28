@@ -21,6 +21,10 @@ function git {
         'diff --quiet --ignore-space-at-eol HEAD bucket/cua-driver.json' { $global:LASTEXITCODE = 1 }
         'rev-parse HEAD:bucket/cua-driver.json' { 'base-blob' }
         'rev-parse HEAD' { 'base-sha' }
+        'fetch origin chore/update-apps-42-1' { if ($scenario -eq 'fetch-failed') { $global:LASTEXITCODE = 1 } }
+        'push origin bot-sha:refs/heads/main' {
+            if ($scenario -eq 'push-failed') { $global:LASTEXITCODE = 1 } else { $requests.Add('git push main') }
+        }
         default { throw "Unexpected git call: $args" }
     }
 }
@@ -40,6 +44,9 @@ function Invoke-RestMethod {
         }
         'Put /contents/bucket/cua-driver.json?ref=chore%2Fupdate-apps-42-1' {
             if ($payload.branch -ne 'chore/update-apps-42-1' -or $payload.sha -ne 'base-blob') { throw 'Manifest write lost concurrency protection.' }
+            $expectedContent = [IO.File]::ReadAllText((Join-Path $workspace 'bucket/cua-driver.json')).Replace("`r`n", "`n")
+            $expectedBytes = [Text.Encoding]::UTF8.GetBytes($expectedContent)
+            if ($payload.content -ne [Convert]::ToBase64String($expectedBytes)) { throw 'Published manifest bytes must be UTF-8 with LF newlines.' }
             @{ commit = @{ sha = 'bot-sha'; message = $payload.message; verification = @{ verified = $true }; author = @{ name = 'github-actions[bot]' } } }
         }
         'Post /actions/workflows/ci.yml/dispatches' {
@@ -51,11 +58,10 @@ function Invoke-RestMethod {
             }) }
         }
         'Get /git/ref/heads/main' {
-            @{ object = @{ sha = $(if ($scenario -eq 'concurrent-main') { 'new-main' } else { 'base-sha' }) } }
+            @{ object = @{ sha = $(if ('git push main' -in $requests) { 'bot-sha' } elseif ($scenario -eq 'concurrent-main') { 'new-main' } else { 'base-sha' }) } }
         }
         'Patch /git/refs/heads/main' {
-            if ($payload.sha -ne 'bot-sha' -or $payload.force -ne $false) { throw 'Promotion changed the tested SHA or forced main.' }
-            @{ object = @{ sha = 'bot-sha' } }
+            throw 'Repository rule violations found: 2 of 2 required status checks are expected.'
         }
         'Delete /git/refs/heads/chore/update-apps-42-1' { }
         default { throw "Unexpected HTTP call: $route" }
@@ -63,17 +69,23 @@ function Invoke-RestMethod {
 }
 
 try {
-    foreach ($scenario in @('success', 'failed-ci', 'concurrent-main')) {
+    foreach ($scenario in @('success', 'failed-ci', 'concurrent-main', 'fetch-failed', 'push-failed')) {
         $requests = [Collections.Generic.List[string]]::new()
         $failure = $null
         try { & "$PSScriptRoot/excavator.ps1" } catch { $failure = $_ }
-        $promoted = 'Patch /git/refs/heads/main' -in $requests
+        $promoted = 'git push main' -in $requests
         if ($scenario -eq 'success') {
             if ($failure) { throw $failure }
             if (-not $promoted -or $requests[-1] -ne 'Delete /git/refs/heads/chore/update-apps-42-1') { throw 'Green signed SHA was not promoted and cleaned up.' }
+            if ($requests[-2] -ne 'Get /git/ref/heads/main') { throw 'Cleanup must follow the final target SHA readback.' }
         } else {
             if (-not $failure -or $promoted -or $requests[-1] -like 'Delete *') { throw "$scenario did not preserve main and staged work." }
-            $expected = if ($scenario -eq 'failed-ci') { '*Required check*' } else { '*Main changed*' }
+            $expected = switch ($scenario) {
+                'failed-ci' { '*Required check*' }
+                'concurrent-main' { '*Main changed*' }
+                'fetch-failed' { '*Could not fetch staged commit*' }
+                'push-failed' { '*Git promotion failed*' }
+            }
             if ($failure.Exception.Message -notlike $expected) { throw $failure }
         }
         Write-Host "Publisher scenario passed: $scenario"

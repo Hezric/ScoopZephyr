@@ -124,7 +124,8 @@ foreach ($path in $changedPaths) {
         throw "Could not read the checkout base for $path."
     }
 
-    $contentBytes = [IO.File]::ReadAllBytes($filePath)
+    # Contents API writes bypass Git's index newline normalization.
+    $contentBytes = [Text.Encoding]::UTF8.GetBytes([IO.File]::ReadAllText($filePath).Replace("`r`n", "`n"))
     $contentBase64 = [Convert]::ToBase64String($contentBytes)
     $app = [IO.Path]::GetFileNameWithoutExtension($path)
     $message = New-CommitMessage -App $app -Version ([string]$manifest.version)
@@ -170,7 +171,12 @@ if ($tipSha -ne $baseSha) {
     if (-not $ready) { throw "Timed out waiting for required checks; staged branch $branch retained." }
     $target = Invoke-GitHubApi -Method Get -Uri "$repoUri/git/ref/heads/$targetBranch"
     if ($target.object.sha -ne $baseSha) { throw "Main changed during excavation; staged branch $branch retained." }
-    $result = Invoke-GitHubApi -Method Patch -Uri "$repoUri/git/refs/heads/$targetBranch" -Body (@{ sha = $tipSha; force = $false } | ConvertTo-Json -Compress)
+    # The REST refs API can report completed checks as missing on protected refs.
+    & git fetch origin $branch
+    if ($LASTEXITCODE -ne 0) { throw "Could not fetch staged commit; branch $branch retained." }
+    & git push origin "${tipSha}:refs/heads/$targetBranch"
+    if ($LASTEXITCODE -ne 0) { throw "Git promotion failed; staged branch $branch retained." }
+    $result = Invoke-GitHubApi -Method Get -Uri "$repoUri/git/ref/heads/$targetBranch"
     if ($result.object.sha -ne $tipSha) { throw 'Promotion did not return the tested SHA.' }
     Write-Host "Promoted verified, tested SHA $tipSha to $targetBranch."
 }
