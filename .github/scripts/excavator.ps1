@@ -160,7 +160,21 @@ if ($tipSha -ne $baseSha) {
     $dispatch = @{ ref = $branch; inputs = @{ 'pr-number' = [string]$pr.number; 'base-branch' = $targetBranch } }
     $null = Invoke-GitHubApi -Method Post -Uri "$repoUri/actions/workflows/ci.yml/dispatches" -Body ($dispatch | ConvertTo-Json -Depth 3 -Compress)
     $ready = $false
+    $approvedRunId = $null
     for ($attempt = 0; $attempt -lt 120; $attempt++) {
+        $runs = (Invoke-GitHubApi -Method Get -Uri "$repoUri/actions/workflows/ci.yml/runs?event=pull_request&head_sha=$tipSha").workflow_runs
+        $native = $runs | Where-Object {
+            $_.event -eq 'pull_request' -and $_.path -eq '.github/workflows/ci.yml' -and
+            $_.head_sha -eq $tipSha -and $_.head_branch -eq $branch -and
+            $_.head_repository.full_name -eq $repository -and $pr.number -in @($_.pull_requests.number)
+        } | Select-Object -First 1
+        if ($native.conclusion -eq 'action_required' -and $native.id -ne $approvedRunId) {
+            $null = Invoke-GitHubApi -Method Post -Uri "$repoUri/actions/runs/$($native.id)/approve"
+            $approvedRunId = $native.id
+        }
+        if ($native.status -eq 'completed' -and $native.conclusion -notin @('success', 'action_required')) {
+            throw "Native PR CI failed; update PR #$($pr.number) retained."
+        }
         $checks = (Invoke-GitHubApi -Method Get -Uri "$repoUri/commits/$tipSha/check-runs").check_runs
         $passed = @()
         foreach ($name in @('test', 'policy')) {
@@ -170,7 +184,7 @@ if ($tipSha -ne $baseSha) {
             }
             if ($check.status -eq 'completed' -and $check.conclusion -eq 'success') { $passed += $name }
         }
-        if ($passed.Count -eq 2) { $ready = $true; break }
+        if ($passed.Count -eq 2 -and $native.conclusion -eq 'success') { $ready = $true; break }
         Start-Sleep -Seconds 10
     }
     if (-not $ready) { throw "Timed out waiting for required checks; staged branch $branch retained." }
