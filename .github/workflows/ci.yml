@@ -16,12 +16,12 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout Bucket
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 2
           path: my_bucket
       - name: Checkout Scoop
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ScoopInstaller/Scoop
           path: scoop_core
@@ -41,12 +41,12 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout Bucket
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 2
           path: my_bucket
       - name: Checkout Scoop
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ScoopInstaller/Scoop
           path: scoop_core
@@ -71,7 +71,7 @@ jobs:
           WINDOWS_POWERSHELL: ${{ needs.test_powershell.result }}
           POWERSHELL: ${{ needs.test_pwsh.result }}
         run: test "$WINDOWS_POWERSHELL" = success && test "$POWERSHELL" = success
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Test updater publication gates
         shell: pwsh
         run: |
@@ -80,7 +80,7 @@ jobs:
   policy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: commit-check/commit-check-action@v2
