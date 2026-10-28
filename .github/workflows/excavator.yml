@@ -8,11 +8,17 @@ on:
 
 permissions:
   contents: write
+  actions: write
+
+concurrency:
+  group: excavator-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   excavate:
     name: Excavate
     runs-on: windows-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,6 +36,7 @@ jobs:
           #requires -Version 7.0
           $ErrorActionPreference = 'Stop'
           & "$env:GITHUB_WORKSPACE\.github\scripts\test-excavator.ps1"
+          & "$env:GITHUB_WORKSPACE\.github\scripts\test-excavator-publish.ps1"
           $env:SCOOP = Join-Path $env:USERPROFILE 'scoop'
           $env:SCOOP_HOME = Join-Path $env:SCOOP 'apps\scoop\current'
           Invoke-RestMethod 'https://raw.githubusercontent.com/ScoopInstaller/Install/master/install.ps1' | Invoke-Expression

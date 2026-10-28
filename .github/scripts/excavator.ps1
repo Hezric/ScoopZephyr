@@ -10,7 +10,11 @@ if (-not $env:GITHUB_REPOSITORY -or $env:GITHUB_REPOSITORY -notmatch '^[^/]+/[^/
 }
 
 $repository = $env:GITHUB_REPOSITORY
-$branch = $env:GITHUB_REF_NAME
+$targetBranch = $env:GITHUB_REF_NAME
+if ($env:GITHUB_RUN_ID -notmatch '^\d+$' -or $env:GITHUB_RUN_ATTEMPT -notmatch '^\d+$') {
+    throw 'A GitHub Actions run ID and attempt are required.'
+}
+$branch = "chore/update-apps-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
 $apiBase = if ($env:GITHUB_API_URL) { $env:GITHUB_API_URL.TrimEnd('/') } else { 'https://api.github.com' }
 $workspace = $env:GITHUB_WORKSPACE
 if (-not $workspace) { throw 'GITHUB_WORKSPACE is required.' }
@@ -96,6 +100,12 @@ if (-not $changedPaths) {
     exit 0
 }
 
+$baseSha = (& git rev-parse HEAD).Trim()
+if ($LASTEXITCODE -ne 0 -or -not $baseSha) { throw 'Could not read the checkout SHA.' }
+$tipSha = $baseSha
+$repoUri = "$apiBase/repos/$repository"
+$null = Invoke-GitHubApi -Method Post -Uri "$repoUri/git/refs" -Body (@{ ref = "refs/heads/$branch"; sha = $baseSha } | ConvertTo-Json -Compress)
+
 foreach ($path in $changedPaths) {
     $filePath = Join-Path $workspace ($path -replace '/', [IO.Path]::DirectorySeparatorChar)
     if (-not (Test-Path -LiteralPath $filePath -PathType Leaf)) {
@@ -136,5 +146,32 @@ foreach ($path in $changedPaths) {
     # The base blob SHA makes conflicting writes fail; the next run uses a fresh checkout.
     $response = Invoke-GitHubApi -Method Put -Uri $contentsUri -Body $jsonBody
     Assert-VerifiedBotCommit -Commit $response.commit -ExpectedMessage $message
+    $tipSha = $response.commit.sha
     Write-Host "Committed $path as $($response.commit.sha)"
 }
+
+if ($tipSha -ne $baseSha) {
+    # GITHUB_TOKEN pushes do not start CI; workflow_dispatch checks the exact staged SHA.
+    $null = Invoke-GitHubApi -Method Post -Uri "$repoUri/actions/workflows/ci.yml/dispatches" -Body (@{ ref = $branch } | ConvertTo-Json -Compress)
+    $ready = $false
+    for ($attempt = 0; $attempt -lt 120; $attempt++) {
+        $checks = (Invoke-GitHubApi -Method Get -Uri "$repoUri/commits/$tipSha/check-runs").check_runs
+        $passed = @()
+        foreach ($name in @('test', 'policy')) {
+            $check = $checks | Where-Object { $_.name -eq $name -and $_.app.id -eq 15368 -and $_.head_sha -eq $tipSha } | Select-Object -First 1
+            if ($check.status -eq 'completed' -and $check.conclusion -ne 'success') {
+                throw "Required check '$name' failed for $tipSha; staged branch $branch retained."
+            }
+            if ($check.status -eq 'completed' -and $check.conclusion -eq 'success') { $passed += $name }
+        }
+        if ($passed.Count -eq 2) { $ready = $true; break }
+        Start-Sleep -Seconds 10
+    }
+    if (-not $ready) { throw "Timed out waiting for required checks; staged branch $branch retained." }
+    $target = Invoke-GitHubApi -Method Get -Uri "$repoUri/git/ref/heads/$targetBranch"
+    if ($target.object.sha -ne $baseSha) { throw "Main changed during excavation; staged branch $branch retained." }
+    $result = Invoke-GitHubApi -Method Patch -Uri "$repoUri/git/refs/heads/$targetBranch" -Body (@{ sha = $tipSha; force = $false } | ConvertTo-Json -Compress)
+    if ($result.object.sha -ne $tipSha) { throw 'Promotion did not return the tested SHA.' }
+    Write-Host "Promoted verified, tested SHA $tipSha to $targetBranch."
+}
+$null = Invoke-GitHubApi -Method Delete -Uri "$repoUri/git/refs/heads/$branch"
