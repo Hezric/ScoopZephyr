@@ -22,10 +22,6 @@ function git {
         'diff --quiet --ignore-space-at-eol HEAD bucket/cua-driver.json' { $global:LASTEXITCODE = 1 }
         'rev-parse HEAD:bucket/cua-driver.json' { 'base-blob' }
         'rev-parse HEAD' { 'base-sha' }
-        'fetch origin chore/update-apps-42-1' { if ($scenario -eq 'fetch-failed') { $global:LASTEXITCODE = 1 } }
-        'push origin bot-sha:refs/heads/main' {
-            if ($scenario -eq 'push-failed') { $global:LASTEXITCODE = 1 } else { $requests.Add('git push main') }
-        }
         default { throw "Unexpected git call: $args" }
     }
 }
@@ -51,7 +47,24 @@ function Invoke-RestMethod {
             @{ commit = @{ sha = 'bot-sha'; message = $payload.message; verification = @{ verified = $true }; author = @{ name = 'github-actions[bot]' } } }
         }
         'Post /actions/workflows/ci.yml/dispatches' {
-            if ($payload.ref -ne 'chore/update-apps-42-1') { throw 'CI dispatched on wrong ref.' }
+            if ($payload.ref -ne 'chore/update-apps-42-1' -or $payload.inputs.'pr-number' -ne '7' -or $payload.inputs.'base-branch' -ne 'main') { throw 'CI dispatched on wrong PR or ref.' }
+        }
+        'Post /pulls' {
+            if ($scenario -eq 'pr-rejected') { throw 'PR creation rejected.' }
+            if ($payload.head -ne 'chore/update-apps-42-1' -or $payload.base -ne 'main' -or $payload.title -ne 'chore(bucket): update app manifests') { throw 'Incorrect update PR.' }
+            @{ number = 7; head = @{ sha = 'bot-sha' }; title = $payload.title }
+        }
+        'Get /pulls/7' {
+            @{ number = 7; head = @{ sha = 'bot-sha' }; title = 'chore(bucket): update app manifests'; base = @{ ref = $(if ($scenario -eq 'retargeted-pr') { 'develop' } else { 'main' }) } }
+        }
+        'Put /pulls/7/merge' {
+            if ($scenario -eq 'merge-failed') { throw 'PR merge rejected.' }
+            if ($payload.sha -ne 'bot-sha' -or $payload.merge_method -ne 'squash') { throw 'Merge did not protect the tested head.' }
+            $requests.Add('merged PR')
+            @{ merged = $true; sha = 'merged-sha' }
+        }
+        'Get /commits/merged-sha' {
+            @{ commit = @{ verification = @{ verified = ($scenario -ne 'unsigned-merge') } } }
         }
         'Get /commits/bot-sha/check-runs' {
             @{ check_runs = @('test', 'policy' | ForEach-Object {
@@ -59,7 +72,7 @@ function Invoke-RestMethod {
             }) }
         }
         'Get /git/ref/heads/main' {
-            @{ object = @{ sha = $(if ('git push main' -in $requests) { 'bot-sha' } elseif ($scenario -eq 'concurrent-main') { 'new-main' } else { 'base-sha' }) } }
+            @{ object = @{ sha = $(if ($scenario -eq 'concurrent-main') { 'new-main' } else { 'base-sha' }) } }
         }
         'Patch /git/refs/heads/main' {
             throw 'Repository rule violations found: 2 of 2 required status checks are expected.'
@@ -70,22 +83,24 @@ function Invoke-RestMethod {
 }
 
 try {
-    foreach ($scenario in @('success', 'failed-ci', 'concurrent-main', 'fetch-failed', 'push-failed')) {
+    foreach ($scenario in @('success', 'failed-ci', 'concurrent-main', 'pr-rejected', 'merge-failed', 'unsigned-merge', 'retargeted-pr')) {
         $requests = [Collections.Generic.List[string]]::new()
         $failure = $null
         try { & "$PSScriptRoot/excavator.ps1" } catch { $failure = $_ }
-        $promoted = 'git push main' -in $requests
+        $merged = 'merged PR' -in $requests
         if ($scenario -eq 'success') {
             if ($failure) { throw $failure }
-            if (-not $promoted -or $requests[-1] -ne 'Delete /git/refs/heads/chore/update-apps-42-1') { throw 'Green signed SHA was not promoted and cleaned up.' }
-            if ($requests[-2] -ne 'Get /git/ref/heads/main') { throw 'Cleanup must follow the final target SHA readback.' }
+            if (-not $merged -or $requests[-1] -ne 'Get /commits/merged-sha') { throw 'Checked PR was not squash-merged and verified.' }
+        } elseif ($scenario -eq 'unsigned-merge') {
+            if (-not $merged -or -not $failure -or $failure.Exception.Message -notlike '*squash commit*Verified*') { throw 'Unverified squash was reported as successful.' }
         } else {
-            if (-not $failure -or $promoted -or $requests[-1] -like 'Delete *') { throw "$scenario did not preserve main and staged work." }
+            if (-not $failure -or $merged -or $requests[-1] -like 'Delete *') { throw "$scenario did not preserve main and staged work." }
             $expected = switch ($scenario) {
                 'failed-ci' { '*Required check*' }
                 'concurrent-main' { '*Main changed*' }
-                'fetch-failed' { '*Could not fetch staged commit*' }
-                'push-failed' { '*Git promotion failed*' }
+                'pr-rejected' { '*PR creation rejected*' }
+                'merge-failed' { '*PR merge rejected*' }
+                'retargeted-pr' { '*Update PR changed*' }
             }
             if ($failure.Exception.Message -notlike $expected) { throw $failure }
         }
