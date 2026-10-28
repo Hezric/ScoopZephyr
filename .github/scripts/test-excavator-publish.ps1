@@ -59,12 +59,26 @@ function Invoke-RestMethod {
         }
         'Put /pulls/7/merge' {
             if ($scenario -eq 'merge-failed') { throw 'PR merge rejected.' }
+            if (@($requests | Where-Object { $_ -like 'Get /actions/workflows/ci.yml/runs*' }).Count -lt 3) { throw 'Native PR CI did not finish.' }
             if ($payload.sha -ne 'bot-sha' -or $payload.merge_method -ne 'squash') { throw 'Merge did not protect the tested head.' }
             $requests.Add('merged PR')
             @{ merged = $true; sha = 'merged-sha' }
         }
         'Get /commits/merged-sha' {
             @{ commit = @{ verification = @{ verified = ($scenario -ne 'unsigned-merge') } } }
+        }
+        'Get /actions/workflows/ci.yml/runs?event=pull_request&head_sha=bot-sha' {
+            $lookups = @($requests | Where-Object { $_ -like 'Get /actions/workflows/ci.yml/runs*' }).Count
+            $conclusion = if ($scenario -eq 'native-failed') { 'failure' } elseif ($lookups -ge 3) { 'success' } else { 'action_required' }
+            @{ workflow_runs = @(@{
+                id = 99; event = 'pull_request'; path = '.github/workflows/ci.yml'
+                head_sha = 'bot-sha'; head_branch = 'chore/update-apps-42-1'
+                head_repository = @{ full_name = $(if ($scenario -eq 'unrelated-run') { 'other/repo' } else { 'Hezric/scoop-zephyr' }) }
+                pull_requests = @(@{ number = 7 }); status = 'completed'; conclusion = $conclusion
+            }) }
+        }
+        'Post /actions/runs/99/approve' {
+            if ($scenario -eq 'approval-rejected') { throw 'Approval rejected.' }
         }
         'Get /commits/bot-sha/check-runs' {
             @{ check_runs = @('test', 'policy' | ForEach-Object {
@@ -83,7 +97,7 @@ function Invoke-RestMethod {
 }
 
 try {
-    foreach ($scenario in @('success', 'failed-ci', 'concurrent-main', 'pr-rejected', 'merge-failed', 'unsigned-merge', 'retargeted-pr')) {
+    foreach ($scenario in @('success', 'failed-ci', 'concurrent-main', 'pr-rejected', 'merge-failed', 'unsigned-merge', 'retargeted-pr', 'approval-rejected', 'native-failed', 'unrelated-run')) {
         $requests = [Collections.Generic.List[string]]::new()
         $failure = $null
         try { & "$PSScriptRoot/excavator.ps1" } catch { $failure = $_ }
@@ -91,6 +105,7 @@ try {
         if ($scenario -eq 'success') {
             if ($failure) { throw $failure }
             if (-not $merged -or $requests[-1] -ne 'Get /commits/merged-sha') { throw 'Checked PR was not squash-merged and verified.' }
+            if (@($requests | Where-Object { $_ -eq 'Post /actions/runs/99/approve' }).Count -ne 1) { throw 'Own native CI must be approved exactly once.' }
         } elseif ($scenario -eq 'unsigned-merge') {
             if (-not $merged -or -not $failure -or $failure.Exception.Message -notlike '*squash commit*Verified*') { throw 'Unverified squash was reported as successful.' }
         } else {
@@ -101,8 +116,12 @@ try {
                 'pr-rejected' { '*PR creation rejected*' }
                 'merge-failed' { '*PR merge rejected*' }
                 'retargeted-pr' { '*Update PR changed*' }
+                'approval-rejected' { '*Approval rejected*' }
+                'native-failed' { '*Native PR CI failed*' }
+                'unrelated-run' { '*Timed out*' }
             }
             if ($failure.Exception.Message -notlike $expected) { throw $failure }
+            if ($scenario -eq 'unrelated-run' -and 'Post /actions/runs/99/approve' -in $requests) { throw 'Unrelated CI was approved.' }
         }
         Write-Host "Publisher scenario passed: $scenario"
     }
