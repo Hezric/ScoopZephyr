@@ -1,5 +1,6 @@
 #requires -Version 7.0
 $ErrorActionPreference = 'Stop'
+$savedExitCode = $global:LASTEXITCODE
 
 # Exercise the publisher at its git and HTTP boundaries without changing a repository.
 $workspace = (Resolve-Path "$PSScriptRoot/../..").Path
@@ -92,4 +93,5 @@ try {
     }
 } finally {
     foreach ($name in $savedEnvironment.Keys) { [Environment]::SetEnvironmentVariable($name, $savedEnvironment[$name]) }
+    $global:LASTEXITCODE = $savedExitCode
 }
