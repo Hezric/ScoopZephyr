@@ -16,11 +16,12 @@ Write public contributions in English and keep the Chinese README synchronized.
    pwsh -NoProfile -File bin/test.ps1
    pwsh -NoProfile -File .github/scripts/test-excavator.ps1
    pwsh -NoProfile -File .github/scripts/test-excavator-publish.ps1
+   uv run --isolated .github/scripts/test-update-pr.py
    git restore -- .markdownlint.json
    ```
 
 4. Open one PR per coherent stage with behavior and verification. Wait for `test` and `policy`; CI covers Windows PowerShell 5.1 and PowerShell 7. Rebase stale branches onto current main, re-sign commits, and use `--force-with-lease` only on the development branch. Maintainers squash-merge through GitHub and verify the resulting signature.
 
-Main is signed and linear, requires strict checks, and forbids force pushes and deletion. Direct updates must promote the exact signed SHA already green on another branch. Excavator follows that path without a bypass. Dependabot keeps native branch names and auto squash-merges weekly grouped Actions updates after checks.
+Main is signed and linear, requires strict checks, and forbids force pushes and deletion. Direct updates must promote the exact signed SHA already green on another branch. Excavator opens signed update PRs, explicitly runs tests and PR policy, and squash-merges after checks without a bypass. Dependabot keeps native branch names and auto squash-merges weekly grouped Actions updates after checks.
 
 This bucket distributes manifests, so it has no build artifacts or release workflow. Each app retains its upstream license. Repository contributions use [MIT](LICENSE). Report security vulnerabilities privately through the repository's Security tab.

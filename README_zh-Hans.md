@@ -32,6 +32,6 @@ scoop install zephyr/<app_name>
 
 清单测试与贡献方式见 [CONTRIBUTING.md](CONTRIBUTING.md)，完整交付规则见 [AGENTS.md](AGENTS.md)。GitHub Issues 是正式任务跟踪系统：规格使用父议题，实施任务使用原生子议题，以 `ready-for-agent`、`in-progress`、`blocked` 和 `done` 标签标记状态。英文 README 为准，中文版本同步维护。
 
-提交须签名，提交信息与 PR 标题采用带作用域的小写 Conventional Commits，分支命名为 `<type>/<short-desc>`。`test` 与 `policy` 是必需检查，守护签名完整、历史线性的 main；常规变更通过 squash PR 合入。[自动更新](docs/features/manifest-updates.md)先在暂存分支生成已验证的机器人提交，运行相同检查，再将通过检查的原 SHA 推进到 main，不设绕过规则的例外。Dependabot 每周分组更新 GitHub Actions，通过检查后自动 squash 合并。
+提交须签名，提交信息与 PR 标题采用带作用域的小写 Conventional Commits，分支命名为 `<type>/<short-desc>`。`test` 与 `policy` 是必需检查，守护签名完整、历史线性的 main；常规变更通过 squash PR 合入。[自动更新](docs/features/manifest-updates.md)先在暂存分支生成已验证的机器人提交，运行相同测试与 PR 规范检查，再将通过检查的更新 squash 合入 main，不设绕过规则的例外。Dependabot 每周分组更新 GitHub Actions，通过检查后自动 squash 合并。
 
 软件源仅分发清单，不发布构建产物。仓库代码采用 [MIT 许可证](LICENSE)，各应用仍遵循其上游许可证。

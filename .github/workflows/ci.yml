@@ -5,6 +5,15 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
+    inputs:
+      pr-number:
+        description: Update PR to validate
+        type: string
+        default: ''
+      base-branch:
+        description: Expected update target
+        type: string
+        default: main
 
 permissions:
   contents: read
@@ -77,6 +86,8 @@ jobs:
         run: |
           ./.github/scripts/test-excavator.ps1
           ./.github/scripts/test-excavator-publish.ps1
+      - name: Test dispatched PR policy
+        run: python3 .github/scripts/test-update-pr.py
   policy:
     runs-on: ubuntu-latest
     steps:
@@ -87,6 +98,16 @@ jobs:
         with:
           branch: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'dependabot/') }}
           pr-title: ${{ github.event_name == 'pull_request' }}
+      - name: Check dispatched update PR
+        if: github.event_name == 'workflow_dispatch' && inputs.pr-number != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr-number }}
+          BASE_BRANCH: ${{ inputs.base-branch }}
+          REPOSITORY: ${{ github.repository }}
+          HEAD_SHA: ${{ github.sha }}
+          HEAD_BRANCH: ${{ github.ref_name }}
+        run: python3 .github/scripts/check-update-pr.py
       - name: Check exact branch name
         if: github.event_name == 'pull_request' || github.ref_type == 'branch'
         env:
@@ -97,7 +118,7 @@ jobs:
             [[ "$BRANCH" =~ ^(feat|fix|perf|refactor|docs|style|test|build|ci|chore|revert)/[a-z0-9]+(-[a-z0-9]+)*$ ]]
           fi
       - name: Check every pushed commit
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && inputs.pr-number == ''
         env:
           BEFORE: ${{ github.event.before }}
         run: |

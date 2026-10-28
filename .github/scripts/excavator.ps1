@@ -152,8 +152,13 @@ foreach ($path in $changedPaths) {
 }
 
 if ($tipSha -ne $baseSha) {
-    # GITHUB_TOKEN pushes do not start CI; workflow_dispatch checks the exact staged SHA.
-    $null = Invoke-GitHubApi -Method Post -Uri "$repoUri/actions/workflows/ci.yml/dispatches" -Body (@{ ref = $branch } | ConvertTo-Json -Compress)
+    $title = 'chore(bucket): update app manifests'
+    $prBody = @{ head = $branch; base = $targetBranch; title = $title; body = 'Automated app manifest updates, validated by the bucket tests and commit policy before squash merge.' }
+    $pr = Invoke-GitHubApi -Method Post -Uri "$repoUri/pulls" -Body ($prBody | ConvertTo-Json -Compress)
+    if ($pr.head.sha -ne $tipSha) { throw 'Update PR does not contain the signed head.' }
+    # GITHUB_TOKEN-created PRs need explicit CI dispatch, including actual PR policy.
+    $dispatch = @{ ref = $branch; inputs = @{ 'pr-number' = [string]$pr.number; 'base-branch' = $targetBranch } }
+    $null = Invoke-GitHubApi -Method Post -Uri "$repoUri/actions/workflows/ci.yml/dispatches" -Body ($dispatch | ConvertTo-Json -Depth 3 -Compress)
     $ready = $false
     for ($attempt = 0; $attempt -lt 120; $attempt++) {
         $checks = (Invoke-GitHubApi -Method Get -Uri "$repoUri/commits/$tipSha/check-runs").check_runs
@@ -171,13 +176,13 @@ if ($tipSha -ne $baseSha) {
     if (-not $ready) { throw "Timed out waiting for required checks; staged branch $branch retained." }
     $target = Invoke-GitHubApi -Method Get -Uri "$repoUri/git/ref/heads/$targetBranch"
     if ($target.object.sha -ne $baseSha) { throw "Main changed during excavation; staged branch $branch retained." }
-    # The REST refs API can report completed checks as missing on protected refs.
-    & git fetch origin $branch
-    if ($LASTEXITCODE -ne 0) { throw "Could not fetch staged commit; branch $branch retained." }
-    & git push origin "${tipSha}:refs/heads/$targetBranch"
-    if ($LASTEXITCODE -ne 0) { throw "Git promotion failed; staged branch $branch retained." }
-    $result = Invoke-GitHubApi -Method Get -Uri "$repoUri/git/ref/heads/$targetBranch"
-    if ($result.object.sha -ne $tipSha) { throw 'Promotion did not return the tested SHA.' }
-    Write-Host "Promoted verified, tested SHA $tipSha to $targetBranch."
+    $currentPr = Invoke-GitHubApi -Method Get -Uri "$repoUri/pulls/$($pr.number)"
+    if ($currentPr.head.sha -ne $tipSha -or $currentPr.title -ne $title) { throw 'Update PR changed after policy validation.' }
+    $result = Invoke-GitHubApi -Method Put -Uri "$repoUri/pulls/$($pr.number)/merge" -Body (@{ sha = $tipSha; merge_method = 'squash' } | ConvertTo-Json -Compress)
+    if ($result.merged -ne $true) { throw 'Update PR was not merged.' }
+    $commit = Invoke-GitHubApi -Method Get -Uri "$repoUri/commits/$($result.sha)"
+    if ($commit.commit.verification.verified -ne $true) { throw 'The squash commit is not Verified.' }
+    Write-Host "Squash-merged verified update PR #$($pr.number) as $($result.sha)."
+} else {
+    $null = Invoke-GitHubApi -Method Delete -Uri "$repoUri/git/refs/heads/$branch"
 }
-$null = Invoke-GitHubApi -Method Delete -Uri "$repoUri/git/refs/heads/$branch"

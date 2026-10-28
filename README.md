@@ -32,6 +32,6 @@ scoop install zephyr/<app_name>
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for manifest tests and contributions, and [AGENTS.md](AGENTS.md) for the complete delivery rules. GitHub Issues is the tracker; specifications use parent issues and tickets use native sub-issues, with `ready-for-agent`, `in-progress`, `blocked`, and `done` labels.
 
-Use signed commits, lowercase scoped Conventional Commits and PR titles, and `<type>/<short-desc>` branches. Required `test` and `policy` checks guard a signed, linear main; changes normally land through squash PRs. [Automatic updates](docs/features/manifest-updates.md) stage verified bot commits, run those same checks, and promote the exact green SHA without a bypass. Dependabot groups GitHub Actions updates weekly and auto squash-merges them after checks.
+Use signed commits, lowercase scoped Conventional Commits and PR titles, and `<type>/<short-desc>` branches. Required `test` and `policy` checks guard a signed, linear main; changes normally land through squash PRs. [Automatic updates](docs/features/manifest-updates.md) stage verified bot commits, run those same checks and PR policy, and squash-merge the checked update without a bypass. Dependabot groups GitHub Actions updates weekly and auto squash-merges them after checks.
 
 The bucket ships manifests rather than release artifacts. Repository code is [MIT licensed](LICENSE); each app retains its upstream license.
