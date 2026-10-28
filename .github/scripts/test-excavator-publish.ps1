@@ -46,9 +46,6 @@ function Invoke-RestMethod {
             if ($payload.content -ne [Convert]::ToBase64String($expectedBytes)) { throw 'Published manifest bytes must be UTF-8 with LF newlines.' }
             @{ commit = @{ sha = 'bot-sha'; message = $payload.message; verification = @{ verified = $true }; author = @{ name = 'github-actions[bot]' } } }
         }
-        'Post /actions/workflows/ci.yml/dispatches' {
-            if ($payload.ref -ne 'chore/update-apps-42-1' -or $payload.inputs.'pr-number' -ne '7' -or $payload.inputs.'base-branch' -ne 'main') { throw 'CI dispatched on wrong PR or ref.' }
-        }
         'Post /pulls' {
             if ($scenario -eq 'pr-rejected') { throw 'PR creation rejected.' }
             if ($payload.head -ne 'chore/update-apps-42-1' -or $payload.base -ne 'main' -or $payload.title -ne 'chore(bucket): update app manifests') { throw 'Incorrect update PR.' }
@@ -88,26 +85,42 @@ function Invoke-RestMethod {
         'Get /git/ref/heads/main' {
             @{ object = @{ sha = $(if ($scenario -eq 'concurrent-main') { 'new-main' } else { 'base-sha' }) } }
         }
-        'Patch /git/refs/heads/main' {
-            throw 'Repository rule violations found: 2 of 2 required status checks are expected.'
+        'Get /git/ref/heads/chore/update-apps-42-1' {
+            if ($scenario -eq 'branch-gone') {
+                throw [Microsoft.PowerShell.Commands.HttpResponseException]::new('Not Found', [Net.Http.HttpResponseMessage]::new([Net.HttpStatusCode]::NotFound))
+            }
+            @{ object = @{ sha = $(if ($scenario -eq 'branch-changed') { 'new-work' } else { 'bot-sha' }) } }
         }
-        'Delete /git/refs/heads/chore/update-apps-42-1' { }
+        'Delete /git/refs/heads/chore/update-apps-42-1' {
+            if ($scenario -in @('branch-delete-gone', 'cleanup-failed')) {
+                $status = if ($scenario -eq 'branch-delete-gone') { [Net.HttpStatusCode]::NotFound } else { [Net.HttpStatusCode]::InternalServerError }
+                throw [Microsoft.PowerShell.Commands.HttpResponseException]::new('Delete failed', [Net.Http.HttpResponseMessage]::new($status))
+            }
+        }
         default { throw "Unexpected HTTP call: $route" }
     }
 }
 
 try {
-    foreach ($scenario in @('success', 'failed-ci', 'concurrent-main', 'pr-rejected', 'merge-failed', 'unsigned-merge', 'retargeted-pr', 'approval-rejected', 'native-failed', 'unrelated-run')) {
+    foreach ($scenario in @('success', 'failed-ci', 'concurrent-main', 'pr-rejected', 'merge-failed', 'unsigned-merge', 'retargeted-pr', 'approval-rejected', 'native-failed', 'unrelated-run', 'branch-gone', 'branch-changed', 'branch-delete-gone', 'cleanup-failed')) {
         $requests = [Collections.Generic.List[string]]::new()
         $failure = $null
         try { & "$PSScriptRoot/excavator.ps1" } catch { $failure = $_ }
         $merged = 'merged PR' -in $requests
         if ($scenario -eq 'success') {
             if ($failure) { throw $failure }
-            if (-not $merged -or $requests[-1] -ne 'Get /commits/merged-sha') { throw 'Checked PR was not squash-merged and verified.' }
+            if (-not $merged -or $requests[-1] -ne 'Delete /git/refs/heads/chore/update-apps-42-1' -or 'Get /commits/merged-sha' -notin $requests) { throw 'Checked PR was not verified and cleaned up.' }
             if (@($requests | Where-Object { $_ -eq 'Post /actions/runs/99/approve' }).Count -ne 1) { throw 'Own native CI must be approved exactly once.' }
         } elseif ($scenario -eq 'unsigned-merge') {
-            if (-not $merged -or -not $failure -or $failure.Exception.Message -notlike '*squash commit*Verified*') { throw 'Unverified squash was reported as successful.' }
+            if (-not $merged -or -not $failure -or $failure.Exception.Message -notlike '*squash commit*Verified*' -or 'Delete /git/refs/heads/chore/update-apps-42-1' -in $requests) { throw 'Unverified squash was reported as successful or cleaned up.' }
+        } elseif ($scenario -eq 'branch-gone') {
+            if (-not $merged -or $failure -or $requests[-1] -ne 'Get /git/ref/heads/chore/update-apps-42-1') { throw 'Already deleted branch was not accepted.' }
+        } elseif ($scenario -eq 'branch-changed') {
+            if (-not $merged -or -not $failure -or $failure.Exception.Message -notlike '*Staging branch changed*' -or $requests[-1] -like 'Delete *') { throw 'Unmerged staging work was not preserved.' }
+        } elseif ($scenario -eq 'branch-delete-gone') {
+            if (-not $merged -or $failure -or $requests[-1] -ne 'Delete /git/refs/heads/chore/update-apps-42-1') { throw 'Concurrent automatic deletion was not accepted.' }
+        } elseif ($scenario -eq 'cleanup-failed') {
+            if (-not $merged -or -not $failure -or [int]$failure.Exception.Response.StatusCode -ne 500) { throw 'Cleanup failure was hidden.' }
         } else {
             if (-not $failure -or $merged -or $requests[-1] -like 'Delete *') { throw "$scenario did not preserve main and staged work." }
             $expected = switch ($scenario) {
