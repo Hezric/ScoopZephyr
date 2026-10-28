@@ -156,9 +156,6 @@ if ($tipSha -ne $baseSha) {
     $prBody = @{ head = $branch; base = $targetBranch; title = $title; body = 'Automated app manifest updates, validated by the bucket tests and commit policy before squash merge.' }
     $pr = Invoke-GitHubApi -Method Post -Uri "$repoUri/pulls" -Body ($prBody | ConvertTo-Json -Compress)
     if ($pr.head.sha -ne $tipSha) { throw 'Update PR does not contain the signed head.' }
-    # GITHUB_TOKEN-created PRs need explicit CI dispatch, including actual PR policy.
-    $dispatch = @{ ref = $branch; inputs = @{ 'pr-number' = [string]$pr.number; 'base-branch' = $targetBranch } }
-    $null = Invoke-GitHubApi -Method Post -Uri "$repoUri/actions/workflows/ci.yml/dispatches" -Body ($dispatch | ConvertTo-Json -Depth 3 -Compress)
     $ready = $false
     $approvedRunId = $null
     for ($attempt = 0; $attempt -lt 120; $attempt++) {
@@ -197,6 +194,12 @@ if ($tipSha -ne $baseSha) {
     $commit = Invoke-GitHubApi -Method Get -Uri "$repoUri/commits/$($result.sha)"
     if ($commit.commit.verification.verified -ne $true) { throw 'The squash commit is not Verified.' }
     Write-Host "Squash-merged verified update PR #$($pr.number) as $($result.sha)."
-} else {
+}
+try {
+    $staged = Invoke-GitHubApi -Method Get -Uri "$repoUri/git/ref/heads/$branch"
+    if ($staged.object.sha -ne $tipSha) { throw 'Staging branch changed; unmerged work retained.' }
     $null = Invoke-GitHubApi -Method Delete -Uri "$repoUri/git/refs/heads/$branch"
+} catch {
+    # GitHub's automatic deletion may already have removed this merged branch.
+    if ([int]$_.Exception.Response.StatusCode -ne 404) { throw }
 }
