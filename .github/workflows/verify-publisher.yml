@@ -1,0 +1,53 @@
+name: Verify locked-main publisher
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: excavator-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  excavate:
+    name: Excavate
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Init Test Suite
+        uses: potatoqualitee/psmodulecache@main
+        with:
+          modules-to-cache: BuildHelpers, Pester
+          shell: pwsh
+      - name: Check, test and publish manifests
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          #requires -Version 7.0
+          $ErrorActionPreference = 'Stop'
+          & "$env:GITHUB_WORKSPACE\.github\scripts\test-excavator.ps1"
+          & "$env:GITHUB_WORKSPACE\.github\scripts\test-excavator-publish.ps1"
+          $env:SCOOP = Join-Path $env:USERPROFILE 'scoop'
+          $env:SCOOP_HOME = Join-Path $env:SCOOP 'apps\scoop\current'
+          Invoke-RestMethod 'https://raw.githubusercontent.com/ScoopInstaller/Install/master/install.ps1' | Invoke-Expression
+          & (Join-Path $env:SCOOP_HOME 'bin\checkver.ps1') -Dir (Join-Path $env:GITHUB_WORKSPACE 'bucket') -Update -SkipUpdated -ThrowError
+          $manifestPath = Join-Path $env:GITHUB_WORKSPACE 'bucket/codex-acp.json'
+          $content = [IO.File]::ReadAllText($manifestPath)
+          $updated = $content.Replace('Example: `OPENAI_API_KEY=sk-... codex-acp`', 'Example: `$env:OPENAI_API_KEY = ''<key>''; codex-acp`')
+          if ($updated -eq $content) { throw 'Expected Windows authentication example was not found.' }
+          [IO.File]::WriteAllText($manifestPath, $updated, [Text.UTF8Encoding]::new($false))
+          # Scoop's CI filter only considers committed changes; test the updated working tree.
+          $env:CI = 'false'
+          & pwsh -NoProfile -File "$env:GITHUB_WORKSPACE\bin\test.ps1"
+          if ($LASTEXITCODE -ne 0) { throw 'Manifest tests failed; no updates were published.' }
+          # The shared test runner removes this tracked file.
+          & git restore -- .markdownlint.json
+          if ($LASTEXITCODE -ne 0) { throw 'Could not restore the test runner cleanup.' }
+          & "$env:GITHUB_WORKSPACE\.github\scripts\excavator.ps1"
