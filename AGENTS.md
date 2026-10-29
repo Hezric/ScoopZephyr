@@ -4,7 +4,7 @@ Zephyr is a Scoop bucket: lightweight, refined tools for seamless workflows. Pub
 
 ## Delivery and tracker
 
-GitHub Issues in `Hezric/scoop-zephyr` is the formal tracker. Specifications are parent issues; implementation tickets are native sub-issues. Create issues with `gh issue create`; attach a child using `gh api repos/Hezric/scoop-zephyr/issues/<parent>/sub_issues -F sub_issue_id=<child-database-id>`. State dependencies as issue links. This declaration is complete; formal delivery stays in Issues.
+GitHub Issues in `Hezric/ScoopZephyr` is the formal tracker. Specifications are parent issues; implementation tickets are native sub-issues. Create issues with `gh issue create`; attach a child using `gh api repos/Hezric/ScoopZephyr/issues/<parent>/sub_issues -F sub_issue_id=<child-database-id>`. State dependencies as issue links. This declaration is complete; formal delivery stays in Issues.
 
 Labels map state: `ready-for-agent` -> `in-progress` -> `done`; use `blocked` with the exact prerequisite. Acceptance closes the issue with its PR/commit and verification; close a parent when all children are accepted. Use Git and Issues for progress. Read [manifest update behavior](docs/features/manifest-updates.md) before changing the updater. Maintain affected current behavior under `docs/features/`; create `GLOSSARY.md` and `docs/adr/` only for confirmed language and consequential architectural decisions.
 

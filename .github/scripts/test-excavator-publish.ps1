@@ -7,7 +7,7 @@ $workspace = (Resolve-Path "$PSScriptRoot/../..").Path
 $savedEnvironment = @{}
 $testEnvironment = @{
     GITHUB_TOKEN = 'test-only-token'; GITHUB_REF_TYPE = 'branch'; GITHUB_REF_NAME = 'main'
-    GITHUB_REPOSITORY = 'Hezric/scoop-zephyr'; GITHUB_WORKSPACE = $workspace
+    GITHUB_REPOSITORY = 'Hezric/ScoopZephyr'; GITHUB_WORKSPACE = $workspace
     GITHUB_RUN_ID = '42'; GITHUB_RUN_ATTEMPT = '1'; GITHUB_API_URL = 'https://api.github.com'
 }
 foreach ($name in $testEnvironment.Keys) {
@@ -38,7 +38,7 @@ function git {
 function Start-Sleep { param($Seconds) }
 function Invoke-RestMethod {
     param($Method, $Uri, $Headers, $ErrorAction, $Body, $ContentType)
-    $route = "$Method $Uri" -replace 'https://api.github.com/repos/Hezric/scoop-zephyr', ''
+    $route = "$Method $Uri" -replace 'https://api.github.com/repos/Hezric/ScoopZephyr', ''
     # Reuse the same boundary checks for the second independent app transaction.
     $route = $route.Replace('bucket/lineup.json', 'bucket/cua-driver.json').Replace('42-1-2', '42-1')
     $requests.Add($route)
@@ -98,7 +98,7 @@ function Invoke-RestMethod {
             @{ workflow_runs = @(@{
                 id = 99; event = 'pull_request'; path = '.github/workflows/ci.yml'
                 head_sha = 'bot-sha'; head_branch = ('chore/update-apps-42-1' + $(if ($state.PublishedApps -eq 2) { '-2' }))
-                head_repository = @{ full_name = $(if ($scenario -eq 'unrelated-run') { 'other/repo' } else { 'Hezric/scoop-zephyr' }) }
+                head_repository = @{ full_name = $(if ($scenario -eq 'unrelated-run') { 'other/repo' } else { 'Hezric/ScoopZephyr' }) }
                 pull_requests = @(@{ number = 7 }); status = 'completed'; conclusion = $conclusion
             }) }
         }
