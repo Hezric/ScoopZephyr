@@ -19,6 +19,18 @@ scoop bucket add zephyr https://github.com/Hezric/ScoopZephyr
 scoop install zephyr/<app_name>
 ```
 
+## 交给智能体
+
+也可以让编程智能体替你推开这扇窗：
+
+```text
+请在这台 Windows 电脑上添加 ScoopZephyr 软件源：
+scoop bucket add zephyr https://github.com/Hezric/ScoopZephyr
+运行 scoop bucket list，确认添加成功。然后阅读
+https://github.com/Hezric/ScoopZephyr 的应用表，帮我挑选需要的工具。
+每安装一个工具，都按它的文档运行版本或帮助命令，确认可以使用。
+```
+
 ## 应用
 
 | 清单 | 说明 | 上游项目 |
