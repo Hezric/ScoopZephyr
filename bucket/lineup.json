@@ -10,6 +10,7 @@
         }
     },
     "bin": "lineup.exe",
+    "notes": "Companion skill: npx skills add Hezric/Lineup -g (optional; use your own skill manager if you have one).",
     "checkver": "github",
     "autoupdate": {
         "architecture": {

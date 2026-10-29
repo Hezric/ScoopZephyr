@@ -19,6 +19,18 @@ scoop bucket add zephyr https://github.com/Hezric/ScoopZephyr
 scoop install zephyr/<app_name>
 ```
 
+## Use with an agent
+
+Let your coding agent open the window:
+
+```text
+Add the ScoopZephyr bucket on this Windows machine:
+scoop bucket add zephyr https://github.com/Hezric/ScoopZephyr
+Verify it appears in scoop bucket list, then read the Apps table at
+https://github.com/Hezric/ScoopZephyr and help me choose what to install.
+Verify each installed tool using its documented version or help command.
+```
+
 ## Apps
 
 | Manifest | Description | Upstream |
