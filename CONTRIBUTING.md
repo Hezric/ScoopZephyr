@@ -2,7 +2,7 @@
 
 Bring a useful tool into the breeze. Keep manifests small, accurate, and faithful to the app's upstream distribution. Follow Scoop's [manifest guide](https://github.com/ScoopInstaller/Scoop/wiki/App-Manifests).
 
-Use [GitHub Issues](https://github.com/Hezric/scoop-zephyr/issues) for bugs, app requests, and delivery work. Specifications are parent issues; tickets are native sub-issues. Labels are `ready-for-agent`, `in-progress`, `blocked`, and `done`. Accepted issues close with a PR/commit and verification. [AGENTS.md](AGENTS.md) defines the complete delivery workflow.
+Use [GitHub Issues](https://github.com/Hezric/ScoopZephyr/issues) for bugs, app requests, and delivery work. Specifications are parent issues; tickets are native sub-issues. Labels are `ready-for-agent`, `in-progress`, `blocked`, and `done`. Accepted issues close with a PR/commit and verification. [AGENTS.md](AGENTS.md) defines the complete delivery workflow.
 
 Write public contributions in English and keep the Chinese README synchronized.
 

@@ -31,9 +31,9 @@ if (($keys -join ',') -ne 'branch,content,message,sha') {
 }
 
 $apiBase = 'https://api.github.com'
-$repository = 'Hezric/scoop-zephyr'
+$repository = 'Hezric/ScoopZephyr'
 $branch = 'validation/probe'
-if ((Get-ContentsUri 'bucket/cua-driver.json') -ne 'https://api.github.com/repos/Hezric/scoop-zephyr/contents/bucket/cua-driver.json?ref=validation%2Fprobe') {
+if ((Get-ContentsUri 'bucket/cua-driver.json') -ne 'https://api.github.com/repos/Hezric/ScoopZephyr/contents/bucket/cua-driver.json?ref=validation%2Fprobe') {
     throw 'Contents API URI lost its path or branch query.'
 }
 $commit = @{ message = $body.message; verification = @{ verified = $true }; author = @{ name = 'github-actions[bot]' } }

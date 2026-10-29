@@ -2,8 +2,8 @@
     <h1>🎐 Zephyr</h1>
     <p>Lightweight, refined tools for seamless workflows.</p>
     <p>
-        <a href="https://github.com/Hezric/scoop-zephyr/actions/workflows/ci.yml"><img src="https://github.com/Hezric/scoop-zephyr/actions/workflows/ci.yml/badge.svg" alt="Bucket tests and policy"></a>
-        <a href="https://github.com/Hezric/scoop-zephyr/actions/workflows/excavator.yml"><img src="https://github.com/Hezric/scoop-zephyr/actions/workflows/excavator.yml/badge.svg" alt="Automatic manifest updates"></a>
+        <a href="https://github.com/Hezric/ScoopZephyr/actions/workflows/ci.yml"><img src="https://github.com/Hezric/ScoopZephyr/actions/workflows/ci.yml/badge.svg" alt="Bucket tests and policy"></a>
+        <a href="https://github.com/Hezric/ScoopZephyr/actions/workflows/excavator.yml"><img src="https://github.com/Hezric/ScoopZephyr/actions/workflows/excavator.yml/badge.svg" alt="Automatic manifest updates"></a>
     </p>
     <p>English | <a href="README_zh-Hans.md">简体中文</a></p>
 </div>
@@ -15,7 +15,7 @@ A small [Scoop](https://scoop.sh) bucket for Windows, gathering useful tools tha
 Add the bucket in PowerShell, then choose an app:
 
 ```pwsh
-scoop bucket add zephyr https://github.com/Hezric/scoop-zephyr
+scoop bucket add zephyr https://github.com/Hezric/ScoopZephyr
 scoop install zephyr/<app_name>
 ```
 

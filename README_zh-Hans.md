@@ -2,8 +2,8 @@
     <h1>🎐 Zephyr</h1>
     <p>轻盈精巧的工具，让工作如风般流畅。</p>
     <p>
-        <a href="https://github.com/Hezric/scoop-zephyr/actions/workflows/ci.yml"><img src="https://github.com/Hezric/scoop-zephyr/actions/workflows/ci.yml/badge.svg" alt="清单测试与提交规范检查"></a>
-        <a href="https://github.com/Hezric/scoop-zephyr/actions/workflows/excavator.yml"><img src="https://github.com/Hezric/scoop-zephyr/actions/workflows/excavator.yml/badge.svg" alt="自动更新应用清单"></a>
+        <a href="https://github.com/Hezric/ScoopZephyr/actions/workflows/ci.yml"><img src="https://github.com/Hezric/ScoopZephyr/actions/workflows/ci.yml/badge.svg" alt="清单测试与提交规范检查"></a>
+        <a href="https://github.com/Hezric/ScoopZephyr/actions/workflows/excavator.yml"><img src="https://github.com/Hezric/ScoopZephyr/actions/workflows/excavator.yml/badge.svg" alt="自动更新应用清单"></a>
     </p>
     <p><a href="README.md">English</a> | 简体中文</p>
 </div>
@@ -15,7 +15,7 @@
 在 PowerShell 中添加软件源，再安装需要的应用：
 
 ```pwsh
-scoop bucket add zephyr https://github.com/Hezric/scoop-zephyr
+scoop bucket add zephyr https://github.com/Hezric/ScoopZephyr
 scoop install zephyr/<app_name>
 ```
 
