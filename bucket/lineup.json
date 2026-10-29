@@ -1,12 +1,12 @@
 {
-    "version": "0.3.0",
+    "version": "0.3.1",
     "description": "A JSON-first Windows startup manager.",
     "homepage": "https://github.com/Hezric/Lineup",
     "license": "MIT",
     "architecture": {
         "64bit": {
-            "url": "https://github.com/Hezric/Lineup/releases/download/v0.3.0/lineup-v0.3.0-x86_64-pc-windows-msvc.zip",
-            "hash": "4de475d10f949d53a907a05318a278d3e544b4236dada4e33380892b2157f58f"
+            "url": "https://github.com/Hezric/Lineup/releases/download/v0.3.1/lineup-v0.3.1-x86_64-pc-windows-msvc.zip",
+            "hash": "6a3888e1720b2af7644f04025cd7e6e41aa0a9e4c14fb55109f969b0f0480682"
         }
     },
     "bin": "lineup.exe",
