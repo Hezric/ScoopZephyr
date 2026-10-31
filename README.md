@@ -29,6 +29,8 @@ scoop bucket add zephyr https://github.com/Hezric/ScoopZephyr
 Verify it appears in scoop bucket list, then read the Apps table at
 https://github.com/Hezric/ScoopZephyr and help me choose what to install.
 Verify each installed tool using its documented version or help command.
+For Earmuff and Homing, verify the executable exists without launching it;
+launching can change volume or Wi-Fi state. Preserve settings and startup registration.
 ```
 
 ## Apps
@@ -38,6 +40,8 @@ Verify each installed tool using its documented version or help command.
 | `autohotkey` | Includes `Ahk2Exe` and sets `AHK_HOME` to the AutoHotkey root. | [AutoHotkey](https://github.com/AutoHotkey/AutoHotkey) |
 | `codex-acp` | Codex ACP adapter for compatible Windows clients such as Zed. | [codex-acp](https://github.com/zed-industries/codex-acp) |
 | `cua-driver` | Cross-platform desktop automation driver for Cua. | [Cua](https://github.com/trycua/cua) |
+| `earmuff` | Guards each Windows output device against sudden volume jumps. | [Earmuff](https://github.com/Hezric/Earmuff) |
+| `homing` | Keeps a saved Windows Wi-Fi network within reach. | [Homing](https://github.com/Hezric/Homing) |
 | `lineup` | A JSON-first Windows startup manager. | [Lineup](https://github.com/Hezric/Lineup) |
 
 ## Contribute
