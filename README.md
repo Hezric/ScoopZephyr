@@ -41,6 +41,7 @@ launching can change volume or Wi-Fi state. Preserve settings and startup regist
 | `codex-acp` | Codex ACP adapter for compatible Windows clients such as Zed. | [codex-acp](https://github.com/zed-industries/codex-acp) |
 | `cua-driver` | Cross-platform desktop automation driver for Cua. | [Cua](https://github.com/trycua/cua) |
 | `earmuff` | Guards each Windows output device against sudden volume jumps. | [Earmuff](https://github.com/Hezric/Earmuff) |
+| `hex` | Local-first voice dictation with on-device speech recognition. | [Hex](https://github.com/anomalyco/hex) |
 | `homing` | Keeps a saved Windows Wi-Fi network within reach. | [Homing](https://github.com/Hezric/Homing) |
 | `lineup` | A JSON-first Windows startup manager. | [Lineup](https://github.com/Hezric/Lineup) |
 

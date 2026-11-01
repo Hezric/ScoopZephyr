@@ -41,6 +41,7 @@ Earmuff 和 Homing 只检查可执行文件存在，不启动程序；启动可�
 | `codex-acp` | 面向 Windows 的 Codex ACP 适配器，适用于 Zed 等兼容客户端。 | [codex-acp](https://github.com/zed-industries/codex-acp) |
 | `cua-driver` | Cua 的跨平台桌面自动化驱动程序。 | [Cua](https://github.com/trycua/cua) |
 | `earmuff` | 按 Windows 输出设备守住音量上限，缓和突然的音量跳变。 | [Earmuff](https://github.com/Hezric/Earmuff) |
+| `hex` | 在设备本地识别语音，将听写结果输入当前应用。 | [Hex](https://github.com/anomalyco/hex) |
 | `homing` | 在已保存的 Wi-Fi 网络断开后，自动尝试重新连接。 | [Homing](https://github.com/Hezric/Homing) |
 | `lineup` | 以 JSON 为主要接口的 Windows 启动项管理器。 | [Lineup](https://github.com/Hezric/Lineup) |
 
