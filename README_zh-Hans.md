@@ -37,6 +37,7 @@ Earmuff 和 Homing 只检查可执行文件存在，不启动程序；启动可�
 
 | 清单 | 说明 | 上游项目 |
 | --- | --- | --- |
+| `agent-speed` | 监测编程智能体的 token 速度与用量。 | [Agent Speed](https://github.com/zoefix/agent-speed) |
 | `autohotkey` | 默认安装 `Ahk2Exe`，并将 `AHK_HOME` 指向 AutoHotkey 根目录。 | [AutoHotkey](https://github.com/AutoHotkey/AutoHotkey) |
 | `codex-acp` | 面向 Windows 的 Codex ACP 适配器，适用于 Zed 等兼容客户端。 | [codex-acp](https://github.com/zed-industries/codex-acp) |
 | `cua-driver` | Cua 的跨平台桌面自动化驱动程序。 | [Cua](https://github.com/trycua/cua) |
