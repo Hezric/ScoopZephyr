@@ -61,6 +61,9 @@ jobs:
           $env:SCOOP_HOME="$(Convert-Path '.\scoop_core')"
           $env:CI='false'
           .\my_bucket\bin\test.ps1
+      - name: Test tray portable migration
+        shell: pwsh
+        run: pwsh -NoProfile -File my_bucket/.github/scripts/test-tray-portable.ps1
   test:
     if: always()
     needs: [test_powershell, test_pwsh]

@@ -13,3 +13,13 @@ The publisher waits up to 20 minutes for that native PR run itself and the exact
 Failed checks, timeout, a concurrent target update, or an API rejection retain the current PR and staged work for inspection and stop subsequent apps. Earlier apps in the run remain merged. Read back PR/target state before retrying a failed transport operation, including a staging-cleanup failure after a successful merge. The next scheduled run starts from current main. Inspect retained work before deleting it. An unchanged staging branch is cleaned up even when its manifest already matches the remote and no PR is needed. Workflow concurrency serializes Excavator runs per target branch; manual dispatch on a development branch targets that branch.
 
 Run `.github/scripts/test-excavator.ps1` for payload, URI, and signature checks, and `.github/scripts/test-excavator-publish.ps1` for checked squash merging, owned native-CI approval, and cleanup/failure handling. GitHub API readback of the PR, checks, and resulting signature verifies the live integration.
+
+## Portable tray applications
+
+Earmuff and Homing persist their `runtime` directory. An empty `runtime/portable`
+marker enables settings in `runtime/data/<App>.toml` and WebView2 data in
+`runtime/data/webview`. Before creating the marker, `post_install` copies the
+legacy APPDATA settings file only if the portable file is absent. It never
+replaces existing portable settings or removes the legacy copy. The runtime
+executable path and existing `current` startup command remain stable across updates.
+The applications have no self-updater; Scoop owns their updates.
