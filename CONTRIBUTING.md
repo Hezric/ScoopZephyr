@@ -4,7 +4,7 @@ Bring a useful tool into the breeze. Keep manifests small, accurate, and faithfu
 
 Use [GitHub Issues](https://github.com/Hezric/ScoopZephyr/issues) for bugs, app requests, and delivery work. Specifications are parent issues; tickets are native sub-issues. Labels are `ready-for-agent`, `in-progress`, `blocked`, and `done`. Accepted issues close with a PR/commit and verification. [AGENTS.md](AGENTS.md) defines the complete delivery workflow.
 
-Write public contributions in English and keep the Chinese README synchronized.
+Write public contributions in English and keep the Chinese README synchronized. Disable built-in automatic update checks and self-updating with supported per-user controls where available, preserving other settings; document any upstream limitation and use Scoop for updates.
 
 1. Create a `<type>/<short-desc>` branch, such as `feat/add-app`.
 2. Sign every commit with a GitHub-registered signing key. Use lowercase scoped Conventional Commits and PR titles, for example `feat(bucket): add ` followed by the app name in backticks. Preserve meaningful technical casing. Supported types and exact checks are in `cchk.toml`.
