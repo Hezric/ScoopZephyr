@@ -1,15 +1,15 @@
 {
-    "version": "0.3.0",
+    "version": "0.3.1",
     "description": "A Windows tray app that protects each output device from sudden volume jumps.",
     "homepage": "https://github.com/Hezric/Earmuff",
     "license": "MIT",
     "architecture": {
         "64bit": {
-            "url": "https://github.com/Hezric/Earmuff/releases/download/v0.3.0/Earmuff-0.3.0-windows-x64.zip",
-            "hash": "76f0e61aa20bd9c2728fc8de65d9f6f5b0082dad0a42cc8ed5806a8ae9ac364f"
+            "url": "https://github.com/Hezric/Earmuff/releases/download/v0.3.1/Earmuff-0.3.1-windows-x64.zip",
+            "hash": "5a03cf665cfaa7f63d9ed19b2f96b4c9cbd38b26e49d25564b5476accbb72e2b"
         }
     },
-    "extract_dir": "Earmuff-0.3.0-windows-x64",
+    "extract_dir": "Earmuff-0.3.1-windows-x64",
     "shortcuts": [
         [
             "earmuff.exe",
