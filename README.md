@@ -39,6 +39,7 @@ launching can change volume or Wi-Fi state. Preserve settings and startup regist
 | --- | --- | --- |
 | `agent-speed` | Monitors coding agent token speed and usage. | [Agent Speed](https://github.com/zoefix/agent-speed) |
 | `autohotkey` | Includes `Ahk2Exe` and sets `AHK_HOME` to the AutoHotkey root. | [AutoHotkey](https://github.com/AutoHotkey/AutoHotkey) |
+| `browse` | Browser automation CLI for coding agents. | [Browse](https://github.com/anomalyco/browse) |
 | `codex-acp` | Codex ACP adapter for compatible Windows clients such as Zed. | [codex-acp](https://github.com/zed-industries/codex-acp) |
 | `cua-driver` | Cross-platform desktop automation driver for Cua. | [Cua](https://github.com/trycua/cua) |
 | `earmuff` | Guards each Windows output device against sudden volume jumps. | [Earmuff](https://github.com/Hezric/Earmuff) |
